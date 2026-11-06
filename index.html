@@ -10,7 +10,6 @@
     --accent:#2d6cdf; --done:#1f9d55; --prog:#d98500; --wait:#7a8a99; --risk:#d6453d;
     --chip:#eef2f7;
   }
-  :root:not([data-theme="light"]) { }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       --bg:#0f141a; --panel:#18212b; --ink:#e7edf3; --muted:#9fb0c0; --line:#263341;
@@ -30,34 +29,40 @@
   .wrap{max-width:1040px;margin:0 auto;padding:24px 16px 60px}
   header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:6px}
   h1{font-size:1.45rem;margin:0;letter-spacing:-.01em}
-  .updated{color:var(--muted);font-size:.85rem}
-  .lede{color:var(--muted);font-size:.9rem;margin:0 0 22px;max-width:70ch}
+  .meta{color:var(--muted);font-size:.84rem;display:flex;gap:10px;align-items:center}
+  .live{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--done);display:inline-block;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .lede{color:var(--muted);font-size:.9rem;margin:0 0 22px;max-width:72ch}
   section{margin:26px 0}
   h2{font-size:1.05rem;margin:0 0 12px;display:flex;align-items:center;gap:8px}
   h2 .bar{width:4px;height:18px;background:var(--accent);border-radius:2px;display:inline-block}
   .grid{display:grid;gap:12px}
   .cards{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+  .scards{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
   .card h3{margin:0 0 8px;font-size:.98rem;display:flex;justify-content:space-between;align-items:center;gap:8px}
   .card p{margin:4px 0;font-size:.86rem;color:var(--muted)}
-  .badge{font-size:.72rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap;border:1px solid transparent}
+  .badge{font-size:.72rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
   .b-done{color:var(--done);background:color-mix(in srgb,var(--done) 14%,transparent)}
-  .b-prog{color:var(--prog);background:color-mix(in srgb,var(--prog) 15%,transparent)}
+  .b-run,.b-prog{color:var(--prog);background:color-mix(in srgb,var(--prog) 15%,transparent)}
   .b-wait{color:var(--wait);background:color-mix(in srgb,var(--wait) 16%,transparent)}
   .b-risk{color:var(--risk);background:color-mix(in srgb,var(--risk) 14%,transparent)}
   .dates{display:flex;flex-wrap:wrap;gap:8px}
   .date{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.85rem;min-width:132px}
   .date b{display:block;font-size:.95rem;color:var(--ink)}
   .date span{color:var(--muted)}
-  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  th,td{text-align:left;padding:10px 12px;font-size:.86rem;border-bottom:1px solid var(--line);vertical-align:top}
-  th{background:var(--chip);color:var(--muted);font-weight:600;font-size:.78rem;letter-spacing:.02em}
-  tr:last-child td{border-bottom:none}
-  td .nm{font-weight:600;color:var(--ink)}
-  .mach{font-size:.72rem;color:var(--muted);font-weight:600}
   .prog-line{height:7px;background:var(--chip);border-radius:4px;overflow:hidden;margin-top:9px}
-  .prog-line i{display:block;height:100%;background:var(--accent);border-radius:4px}
+  .prog-line i{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .4s}
+  .scard .nm{font-weight:600;font-size:.96rem;color:var(--ink)}
+  .scard .mach{font-size:.7rem;color:var(--muted);font-weight:700;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-right:6px}
+  .scard .role{font-size:.82rem;color:var(--muted);margin:5px 0 8px}
+  .issues{list-style:none;margin:0;padding:0}
+  .issues li{font-size:.85rem;padding:5px 0 5px 16px;position:relative;border-top:1px dashed var(--line)}
+  .issues li:first-child{border-top:none}
+  .issues li::before{content:"";position:absolute;left:3px;top:11px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
   .note{color:var(--muted);font-size:.78rem;margin-top:34px;border-top:1px solid var(--line);padding-top:14px}
+  .err{color:var(--risk);font-size:.85rem}
   @media (max-width:560px){ .date{flex:1 1 44%} }
 </style>
 </head>
@@ -65,71 +70,78 @@
 <div class="wrap">
   <header>
     <h1>DSMP 학기 마무리 현황판</h1>
-    <span class="updated" id="updated"></span>
+    <div class="meta">
+      <span class="live"><span class="dot"></span>자동 갱신</span>
+      <span id="updated"></span>
+    </div>
   </header>
-  <p class="lede">7장·8장 영상 강의와 기말 과제를 여러 세션이 나눠 진행합니다. 공개 주소라 높은 수준 현황만 담았습니다(세부 설계·채점 내용 제외). 갱신 시각 기준 스냅샷입니다.</p>
+  <p class="lede">7·8장은 <b>영상을 담은 강의노트</b>를 준비하고, 기말 과제를 설계·채점합니다. 여러 세션이 나눠 진행하며, 세션마다 지금의 쟁점을 보여 줍니다. 공개 주소라 세부 설계·채점 내용·비밀 값·개인 정보는 담지 않았습니다.</p>
 
   <section>
     <h2><span class="bar"></span>핵심 기한</h2>
-    <div class="dates">
-      <div class="date"><b>7장 완성</b><span>11/8(일) 밤</span></div>
-      <div class="date"><b>7장 수업</b><span>11/12(목) A · 11/13(금) B</span></div>
-      <div class="date"><b>8장 준비</b><span>~11/24(화)</span></div>
-      <div class="date"><b>8장 수업</b><span>11/26 주간</span></div>
-      <div class="date"><b>기말 공고</b><span>12/1(화)</span></div>
-      <div class="date"><b>기말 마감</b><span>12/14(월)</span></div>
-    </div>
+    <div class="dates" id="dates"></div>
   </section>
 
   <section>
     <h2><span class="bar"></span>장별 진행</h2>
-    <div class="grid cards">
-      <div class="card">
-        <h3>7장 영상 강의 <span class="badge b-prog">진행</span></h3>
-        <p>7.3절 공개 완료 · 7.4절 공개 완료(기한보다 하루 앞섬)</p>
-        <p>7.5절(V31~V38) 편집·비밀값 검사 진행</p>
-        <p>관문 통과 영상 16편(V15~V30), V31~V38 진행 중</p>
-        <div class="prog-line"><i style="width:84%"></i></div>
-      </div>
-      <div class="card">
-        <h3>8장 영상 강의 <span class="badge b-prog">준비</span></h3>
-        <p>개념 영상 준비 · 목소리 생성</p>
-        <p>윈도 VM 리허설·녹화 11/10~11 예정</p>
-        <div class="prog-line"><i style="width:30%"></i></div>
-      </div>
-      <div class="card">
-        <h3>기말 과제 <span class="badge b-prog">설계</span></h3>
-        <p>채점 설계 진행(앱 25 + 보고서 15)</p>
-        <p>공고 12/1 · 11/9 뒤 실측으로 변별력 확정</p>
-        <div class="prog-line"><i style="width:45%"></i></div>
-      </div>
-    </div>
+    <div class="grid cards" id="chapters"></div>
   </section>
 
   <section>
-    <h2><span class="bar"></span>세션 현황</h2>
-    <table>
-      <thead><tr><th>세션</th><th>맡은 일</th><th>상태</th></tr></thead>
-      <tbody>
-        <tr><td><span class="mach">프로</span><br><span class="nm">DSMP 총괄 1105-02</span></td><td>전체 지휘·조율</td><td><span class="badge b-prog">가동</span></td></tr>
-        <tr><td><span class="mach">프로</span><br><span class="nm">7장 녹화(VM) 1105-03</span></td><td>녹화·노션 반영</td><td><span class="badge b-done">녹화 완료</span></td></tr>
-        <tr><td><span class="mach">프로</span><br><span class="nm">7장 편집 1106-02</span></td><td>7.5절 비밀값 검사</td><td><span class="badge b-prog">가동</span></td></tr>
-        <tr><td><span class="mach">프로</span><br><span class="nm">7장 편집 1106-01</span></td><td>7장 편집(V19~V30)</td><td><span class="badge b-done">완료·인계</span></td></tr>
-        <tr><td><span class="mach">프로</span><br><span class="nm">8장 노트 1105-01</span></td><td>8장(에어로 이관)</td><td><span class="badge b-wait">대기</span></td></tr>
-        <tr><td><span class="mach">에어</span><br><span class="nm">7장 편집 1106-02</span></td><td>7.5절 편집(V31~V38)</td><td><span class="badge b-prog">가동</span></td></tr>
-        <tr><td><span class="mach">에어</span><br><span class="nm">8장 노트 1105-01</span></td><td>목소리 생성·8장</td><td><span class="badge b-prog">가동</span></td></tr>
-        <tr><td><span class="mach">에어</span><br><span class="nm">기말 과제 1105-05</span></td><td>기말 채점 설계</td><td><span class="badge b-prog">가동</span></td></tr>
-        <tr><td><span class="mach">에어</span><br><span class="nm">기말 과제 1105-02</span></td><td>기말 설계·중계</td><td><span class="badge b-wait">대기</span></td></tr>
-      </tbody>
-    </table>
+    <h2><span class="bar"></span>세션별 쟁점</h2>
+    <div class="grid scards" id="sessions"></div>
   </section>
 
-  <p class="note">※ 공개 주소이므로 기말 채점의 변별 방법·세부 설계, 비밀 값, 개인 정보는 담지 않았습니다. 상태는 갱신 시각의 스냅샷이며, 총괄 세션이 변동이 있을 때 다시 올립니다.</p>
+  <p class="note" id="note"></p>
 </div>
 <script>
-  // 갱신 시각: 빌드 때 박아 넣은 값을 표시(변동 시 총괄 세션이 다시 올림)
-  var UPDATED = "2026-11-06 19:20 KST";
-  document.getElementById('updated').textContent = '갱신 ' + UPDATED;
+  var REFRESH_MS = 30000;
+  var el = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); };
+  var badgeText = { done:'완료', run:'가동', wait:'대기', prog:'진행', risk:'주의' };
+  var lastUpdated = '';
+
+  function render(d){
+    // 기한
+    el('dates').innerHTML = (d.deadlines||[]).map(function(x){
+      return '<div class="date"><b>'+esc(x.label)+'</b><span>'+esc(x.when)+'</span></div>';
+    }).join('');
+    // 장별
+    el('chapters').innerHTML = (d.chapters||[]).map(function(c){
+      var st = c.status||'prog';
+      return '<div class="card"><h3>'+esc(c.name)+' <span class="badge b-'+st+'">'+(badgeText[st]||st)+'</span></h3>'
+        + (c.lines||[]).map(function(l){ return '<p>'+esc(l)+'</p>'; }).join('')
+        + '<div class="prog-line"><i style="width:'+(c.pct||0)+'%"></i></div></div>';
+    }).join('');
+    // 세션별 쟁점
+    el('sessions').innerHTML = (d.sessions||[]).map(function(s){
+      var st = s.status||'run';
+      return '<div class="card scard">'
+        + '<h3><span class="nm"><span class="mach">'+esc(s.machine)+'</span>'+esc(s.name)+'</span>'
+        + '<span class="badge b-'+st+'">'+(badgeText[st]||st)+'</span></h3>'
+        + '<div class="role">'+esc(s.role||'')+'</div>'
+        + '<ul class="issues">'+(s.issues||[]).map(function(i){ return '<li>'+esc(i)+'</li>'; }).join('')+'</ul>'
+        + '</div>';
+    }).join('');
+    lastUpdated = d.updated||'';
+    el('note').textContent = '※ 공개 주소이므로 기말 채점의 변별 방법·세부 설계, 비밀 값, 개인 정보는 담지 않았습니다. 데이터 갱신: ' + lastUpdated + ' · 페이지는 ' + (REFRESH_MS/1000) + '초마다 다시 읽음.';
+    tick();
+  }
+
+  function tick(){
+    if(!lastUpdated){ el('updated').textContent=''; return; }
+    el('updated').textContent = '데이터 ' + lastUpdated;
+  }
+
+  function load(){
+    fetch('data.json?t=' + Date.now(), { cache:'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(render)
+      .catch(function(e){ el('note').innerHTML = '<span class="err">데이터를 불러오지 못했습니다 ('+esc(e.message)+'). 잠시 뒤 다시 시도합니다.</span>'; });
+  }
+
+  load();
+  setInterval(load, REFRESH_MS);
 </script>
 </body>
 </html>
