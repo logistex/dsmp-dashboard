@@ -57,6 +57,10 @@
   .scard .nm{font-weight:600;font-size:.96rem;color:var(--ink)}
   .scard .mach{font-size:.7rem;color:var(--muted);font-weight:700;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-right:6px}
   .scard .role{font-size:.82rem;color:var(--muted);margin:5px 0 8px}
+  .ctx{color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:.76rem;white-space:nowrap}
+  .summary{display:flex;gap:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:.88rem;color:var(--muted)}
+  .summary b{color:var(--ink);font-size:1rem}
+  .summary .s-work b{color:var(--prog)} .summary .s-done b{color:var(--done)} .summary .s-wait b{color:var(--wait)}
   .issues{list-style:none;margin:0;padding:0}
   .issues li{font-size:.85rem;padding:5px 0 5px 16px;position:relative;border-top:1px dashed var(--line)}
   .issues li:first-child{border-top:none}
@@ -89,6 +93,7 @@
 
   <section>
     <h2><span class="bar"></span>세션별 쟁점</h2>
+    <div class="summary" id="ssummary"></div>
     <div class="grid scards" id="sessions"></div>
   </section>
 
@@ -98,7 +103,7 @@
   var REFRESH_MS = 30000;
   var el = function(id){ return document.getElementById(id); };
   var esc = function(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); };
-  var badgeText = { done:'완료', run:'가동', wait:'대기', prog:'진행', risk:'주의' };
+  var badgeText = { done:'완료', work:'작업 중', run:'작업 중', wait:'대기', prog:'진행', risk:'주의' };
   var lastUpdated = '';
 
   function render(d){
@@ -113,18 +118,24 @@
         + (c.lines||[]).map(function(l){ return '<p>'+esc(l)+'</p>'; }).join('')
         + '<div class="prog-line"><i style="width:'+(c.pct||0)+'%"></i></div></div>';
     }).join('');
-    // 세션별 쟁점
-    el('sessions').innerHTML = (d.sessions||[]).map(function(s){
-      var st = s.status||'run';
+    // 세션별 쟁점 + 집계
+    var ss = d.sessions||[];
+    var cnt = { work:0, wait:0, done:0 };
+    ss.forEach(function(s){ var k=s.state||'work'; if(cnt[k]!==undefined) cnt[k]++; });
+    el('ssummary').innerHTML = '<span class="s-work">작업 중 <b>'+cnt.work+'</b></span>'
+      + '<span class="s-wait">대기 <b>'+cnt.wait+'</b></span>'
+      + '<span class="s-done">완료 <b>'+cnt.done+'</b></span>';
+    el('sessions').innerHTML = ss.map(function(s){
+      var st = s.state||'work';
       return '<div class="card scard">'
         + '<h3><span class="nm"><span class="mach">'+esc(s.machine)+'</span>'+esc(s.name)+'</span>'
         + '<span class="badge b-'+st+'">'+(badgeText[st]||st)+'</span></h3>'
-        + '<div class="role">'+esc(s.role||'')+'</div>'
+        + '<div class="role">'+esc(s.role||'')+' · <span class="ctx">맥락 '+esc(s.ctx||'—')+'</span></div>'
         + '<ul class="issues">'+(s.issues||[]).map(function(i){ return '<li>'+esc(i)+'</li>'; }).join('')+'</ul>'
         + '</div>';
     }).join('');
     lastUpdated = d.updated||'';
-    el('note').textContent = '※ 공개 주소이므로 기말 채점의 변별 방법·세부 설계, 비밀 값, 개인 정보는 담지 않았습니다. 데이터 갱신: ' + lastUpdated + ' · 페이지는 ' + (REFRESH_MS/1000) + '초마다 다시 읽음.';
+    el('note').textContent = '※ 가동 여부·맥락 %는 각 세션의 마지막 보고 기준입니다(에어 세션은 다른 기기라 직접 못 읽어 물어서 받고, 맥락 미보고는 —). 공개 주소라 기말 채점의 변별 방법·세부 설계, 비밀 값, 개인 정보는 담지 않았습니다. 데이터 갱신: ' + lastUpdated + ' · 페이지는 ' + (REFRESH_MS/1000) + '초마다 다시 읽음.';
     tick();
   }
 
