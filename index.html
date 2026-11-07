@@ -58,11 +58,11 @@
   .pct{font-size:.85rem;font-weight:800;color:var(--ink);min-width:42px;text-align:right}
   /* 다크모드 색약 대비: 트랙은 거의 검정, 바는 명도 높은 하늘색에 흰 윤곽, 숫자는 밝게 */
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .prog-line{background:#0b0e13}
-    :root:not([data-theme="light"]) .prog-line i{background:#8fc2ff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5)}
-    :root:not([data-theme="light"]) .pct{color:#a9d0ff} }
+    :root:not([data-theme="light"]) .prog-line i{background:#ffd24a;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
+    :root:not([data-theme="light"]) .pct{color:#ffda80} }
   :root[data-theme="dark"] .prog-line{background:#0b0e13}
-  :root[data-theme="dark"] .prog-line i{background:#8fc2ff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5)}
-  :root[data-theme="dark"] .pct{color:#a9d0ff}
+  :root[data-theme="dark"] .prog-line i{background:#ffd24a;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
+  :root[data-theme="dark"] .pct{color:#ffda80}
   /* 신 교수 할 일 체크리스트 */
   .todocard{margin-bottom:12px}
   .todolist{list-style:none;margin:6px 0 0;padding:0}
