@@ -26,19 +26,6 @@ CHAPTERS = [
     {"name":"기말 과제","status":"work","pct":45,
      "lines":["채점 설계 진행(앱 25 + 보고서 15)","공고 12/1 · 11/9 뒤 실측으로 변별력 확정"]},
 ]
-# 신 교수 할 일(교수 손이 꼭 필요한 것만. id는 고정 — 체크 상태가 유지되게 함)
-TODOS = [
-    {"id":"t4","label":"Anthropic Will 블록 세부 재회신","when":"지금",
-     "note":"총괄이 만든 회신 초안을 Will에게 보냄 — path1.js(앱 표 노출) 재개 판단용"},
-    {"id":"t2","label":"기말 실측 로그인","when":"11/9 이후",
-     "note":"Supabase 1번·Vercel 1번 — 앱 표 노출·미리보기 배포 확인"},
-    {"id":"t1","label":"8장 VM 로그인·승인","when":"11/10~11 녹화 전",
-     "note":"윈도 VM 크롬: 깃허브(OAuth App·저장소)·Vercel·Supabase 계정 B·노션 실습 워크스페이스. 방화벽 창 시험 1번 포함"},
-    {"id":"t5","label":"7장 수업","when":"11/12(목) A · 11/13(금) B",
-     "note":"공개 노트·영상으로 진행"},
-    {"id":"t3","label":"기말 과제 요약 확인·답","when":"준비되는 대로",
-     "note":"성적 입력 기한·평가계획서 대응·게시 승인(요약 문서 3장 2~4번)"},
-]
 # 쉬는/끝난 세션 기본값(자가 보고 파일이 없으면 이 값을 씀)
 STATIC = [
     {"machine":"프로","name":"DSMP 총괄 1105-02","role":"전체 지휘·조율","state":"work","ctx":"50%","issues":["세션 조율·기한 관리","현황판 유지·외부 회신 추적"]},
@@ -91,7 +78,7 @@ def main():
         return 4
     order={"work":0,"wait":1,"done":2}
     sessions.sort(key=lambda s:(topic_rank(s), 0 if s["machine"]=="프로" else 1, order.get(s["state"],9)))
-    data={"updated":kst_now(),"deadlines":DEADLINES,"chapters":CHAPTERS,"todos":TODOS,"sessions":sessions}
+    data={"updated":kst_now(),"deadlines":DEADLINES,"chapters":CHAPTERS,"sessions":sessions}
     json.dump(data,open(os.path.join(HERE,"data.json"),"w",encoding="utf-8"),ensure_ascii=False,indent=2)
     print("built data.json:",data["updated"],"sessions",len(sessions),
           "from_files",len(files))
