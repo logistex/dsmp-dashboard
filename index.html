@@ -76,6 +76,18 @@
   .todolist li.tdone .tlabel{text-decoration:line-through;color:var(--muted)}
   .todolist li.tdone{opacity:.6}
   .thint{margin:11px 0 0;font-size:.77rem;color:var(--muted);border-top:1px solid var(--line);padding-top:9px}
+  .trow{display:flex;align-items:center;gap:9px}
+  .tctrls{margin-left:auto;display:flex;align-items:center;gap:4px;flex:none}
+  .tbtn{border:1px solid var(--line);background:var(--chip);color:var(--muted);border-radius:6px;width:27px;height:27px;font-size:.95rem;cursor:pointer;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0}
+  .tbtn:hover:not(:disabled){color:var(--ink);border-color:var(--accent)}
+  .tbtn:disabled{opacity:.28;cursor:default}
+  .tbtn.tdel:hover{color:var(--risk);border-color:var(--risk)}
+  .twhen{margin-left:0}
+  .tadd{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .tadd input{flex:1;min-width:120px;background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:8px 10px;color:var(--ink);font-size:.86rem;font-family:inherit}
+  .tadd input:focus{outline:none;border-color:var(--accent)}
+  .tadd .addbtn{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 15px;font-size:.86rem;font-weight:700;cursor:pointer;white-space:nowrap}
+  .treset{font:inherit;font-size:.77rem;color:var(--accent);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0}
   .scard .nm{font-weight:600;font-size:.96rem;color:var(--ink)}
   .scard .mach{font-size:.7rem;color:var(--muted);font-weight:700;border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-right:6px}
   .scard .role{font-size:.82rem;color:var(--muted);margin:5px 0 8px}
@@ -129,27 +141,42 @@
   var badgeText = { done:'완료', work:'작업 중', run:'작업 중', wait:'대기', prog:'진행', risk:'주의' };
   var lastUpdated = '';
 
-  function getChk(id){ try{ return localStorage.getItem('dsmp_todo_'+id)==='1'; }catch(e){ return false; } }
-  function setChk(id,v){ try{ if(v){ localStorage.setItem('dsmp_todo_'+id,'1'); } else { localStorage.removeItem('dsmp_todo_'+id); } }catch(e){} }
+  var TKEY = 'dsmp_todos_v1';
+  var curSeed = [];
+  function loadTodos(seed){
+    try{ var raw = localStorage.getItem(TKEY); if(raw){ var a = JSON.parse(raw); if(Array.isArray(a)) return a; } }catch(e){}
+    return (seed||[]).map(function(t){ return {id:t.id, label:t.label, when:t.when||'', note:t.note||'', done:false}; });
+  }
+  function saveTodos(list){ try{ localStorage.setItem(TKEY, JSON.stringify(list)); }catch(e){} }
+  function clearTodos(){ try{ localStorage.removeItem(TKEY); }catch(e){} }
 
-  function renderTodos(todos){
-    todos = todos||[];
-    if(!todos.length){ el('todos').innerHTML=''; return; }
-    var done=0;
-    var rows = todos.map(function(t){
-      var on = getChk(t.id); if(on) done++;
-      return '<li class="todo'+(on?' tdone':'')+'">'
-        + '<label><input type="checkbox" data-id="'+esc(t.id)+'"'+(on?' checked':'')+'>'
-        + '<span class="tlabel">'+esc(t.label)+'</span>'
-        + '<span class="twhen">'+esc(t.when||'')+'</span></label>'
+  function renderTodos(seed){
+    if(seed) curSeed = seed;
+    var list = loadTodos(curSeed);
+    if(!list.length){ el('todos').innerHTML=''; return; }
+    var done = 0;
+    var rows = list.map(function(t,i){
+      if(t.done) done++;
+      return '<li class="todo'+(t.done?' tdone':'')+'" data-i="'+i+'">'
+        + '<div class="trow">'
+        +   '<input type="checkbox" class="tchk"'+(t.done?' checked':'')+'>'
+        +   '<span class="tlabel">'+esc(t.label)+'</span>'
+        +   (t.when?'<span class="twhen">'+esc(t.when)+'</span>':'')
+        +   '<span class="tctrls">'
+        +     '<button type="button" class="tbtn tup"'+(i===0?' disabled':'')+' aria-label="위로">↑</button>'
+        +     '<button type="button" class="tbtn tdn"'+(i===list.length-1?' disabled':'')+' aria-label="아래로">↓</button>'
+        +     '<button type="button" class="tbtn tdel" aria-label="삭제">×</button>'
+        +   '</span>'
+        + '</div>'
         + (t.note?'<p class="tnote">'+esc(t.note)+'</p>':'')
         + '</li>';
     }).join('');
     el('todos').innerHTML = '<div class="card todocard">'
       + '<h3><span class="nm">신 교수 할 일</span>'
-      + '<span class="badge b-prog" id="tbadge">'+done+' / '+todos.length+'</span></h3>'
+      + '<span class="badge b-prog" id="tbadge">'+done+' / '+list.length+'</span></h3>'
       + '<ul class="todolist">'+rows+'</ul>'
-      + '<p class="thint">※ 체크는 이 브라우저에만 기억됩니다(기기·브라우저마다 따로). 끝낸 일을 모든 기기와 세션에 반영하려면 총괄에게 말씀해 주시면 목록에서 지우겠습니다.</p>'
+      + '<div class="tadd"><input id="tadd-label" placeholder="새 할 일" maxlength="80"><input id="tadd-when" placeholder="시점(선택)" maxlength="40"><button type="button" class="addbtn" id="tadd-btn">추가</button></div>'
+      + '<p class="thint">※ 순서 이동(↑↓)·추가·삭제·체크는 이 브라우저에만 기억됩니다(기기·브라우저마다 따로). <button type="button" class="treset" id="treset">기본 목록으로 되돌리기</button></p>'
       + '</div>';
   }
 
@@ -181,7 +208,8 @@
         + '<ul class="issues">'+(s.issues||[]).map(function(i){ return '<li>'+esc(i)+'</li>'; }).join('')+'</ul>'
         + '</div>';
     }).join('');
-    renderTodos(d.todos);
+    if(!window.__todosInit){ renderTodos(d.todos); window.__todosInit = true; }
+    else { curSeed = d.todos || curSeed; }
     lastUpdated = d.updated||'';
     el('note').textContent = '※ 가동 여부·맥락 %는 각 세션의 마지막 보고 기준입니다(에어 세션은 다른 기기라 직접 못 읽어 물어서 받고, 맥락 미보고는 —). 공개 주소라 기말 채점의 변별 방법·세부 설계, 비밀 값, 개인 정보는 담지 않았습니다. 데이터 갱신: ' + lastUpdated + ' · 페이지는 ' + (REFRESH_MS/1000) + '초마다 다시 읽음.';
     tick();
@@ -201,16 +229,36 @@
 
   el('todos').addEventListener('change', function(e){
     var cb = e.target;
-    if(!cb || cb.type !== 'checkbox') return;
-    var id = cb.getAttribute('data-id'); if(!id) return;
-    setChk(id, cb.checked);
-    var li = cb.closest('li.todo');
-    if(li) li.classList.toggle('tdone', cb.checked);
+    if(!cb || !cb.classList || !cb.classList.contains('tchk')) return;
+    var li = cb.closest('li.todo'); if(!li) return;
+    var i = parseInt(li.getAttribute('data-i'), 10);
+    var list = loadTodos(curSeed); if(!list[i]) return;
+    list[i].done = cb.checked; saveTodos(list);
+    li.classList.toggle('tdone', cb.checked);
     var b = el('tbadge');
-    if(b){
-      var boxes = document.querySelectorAll('#todos input[type=checkbox]');
-      var n = 0; boxes.forEach(function(x){ if(x.checked) n++; });
-      b.textContent = n + ' / ' + boxes.length;
+    if(b){ var d = list.filter(function(t){ return t.done; }).length; b.textContent = d + ' / ' + list.length; }
+  });
+  el('todos').addEventListener('click', function(e){
+    var t = e.target;
+    if(t.id === 'tadd-btn'){
+      var lab = el('tadd-label'), whn = el('tadd-when');
+      var v = (lab && lab.value || '').trim(); if(!v) return;
+      var list = loadTodos(curSeed);
+      list.push({ id:'u'+Date.now(), label:v, when:(whn && whn.value || '').trim(), note:'', done:false });
+      saveTodos(list); renderTodos();
+      return;
+    }
+    if(t.id === 'treset'){ clearTodos(); renderTodos(); return; }
+    var li = t.closest && t.closest('li.todo'); if(!li) return;
+    var i = parseInt(li.getAttribute('data-i'), 10);
+    var list = loadTodos(curSeed);
+    if(t.classList.contains('tup') && i > 0){ var a = list[i-1]; list[i-1] = list[i]; list[i] = a; saveTodos(list); renderTodos(); }
+    else if(t.classList.contains('tdn') && i < list.length - 1){ var c = list[i+1]; list[i+1] = list[i]; list[i] = c; saveTodos(list); renderTodos(); }
+    else if(t.classList.contains('tdel')){ list.splice(i, 1); saveTodos(list); renderTodos(); }
+  });
+  el('todos').addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && (e.target.id === 'tadd-label' || e.target.id === 'tadd-when')){
+      e.preventDefault(); var btn = el('tadd-btn'); if(btn) btn.click();
     }
   });
 
